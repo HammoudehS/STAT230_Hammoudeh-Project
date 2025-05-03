@@ -1,0 +1,165 @@
+---
+title: "Final Project"
+subtitle: "STAT 230 Spring 2025"
+author: "Subhi Hammoudeh"
+format:
+  html:
+    embed-resources: true
+execute:
+  echo: true
+---
+```{r}
+# load needed libraries
+library(tidyverse)
+```
+
+# Data
+
+What data set are you using? 
+I'm using data showing the people who received their full vaccination or booster shots for covid.
+  
+Variable	                             Type
+COUNTRY                	                Categorical nominal
+ISO3      	                            Categorical nominal
+WHO_REGION	                            Categorical nominal
+DATA_SOURCE         	                  Categorical nominal
+DATE_UPDATED	                          Numeric discrete
+TOTAL_VACCINATIONS	                    Numeric discrete
+TOTAL_VACCINATIONS_PER100	              Numeric continuous rate
+PERSONS_VACCINATED_1PLUS_DOSE	          Numeric discrete
+PERSONS_VACCINATED_1PLUS_DOSE_PER100  	Numeric continuous
+PERSONS_FULLY_VACCINATED	              Numeric`discrete
+PERSONS_FULLY_VACCINATED_PER100	        Numeric continuous
+NUMBER_VACCINES_TYPES_USED	            Numeric discrete 
+PERSONS_BOOSTER_ADD_DOSE	              Numeric discrete
+PERSONS_BOOSTER_ADD_DOSE_PER100	        Numeric continuous
+
+
+#Read data in:
+
+```{r}
+vacc <- read_csv(
+  "https://srhdpeuwpubsa.blob.core.windows.net/whdh/COVID/vaccination-data.csv",
+  show_col_types = FALSE
+)
+```
+# Questions
+
+What questions are you going to answer with this data set?
+
+Do high-income countries have a significantly higher average vaccination rate than low-income countries? 
+
+Is there a correlation between vaccination rate and booster uptake across countries?
+
+# Plots
+
+Full Vaccination Coverage:
+```{r}
+ggplot(vacc, aes(x = PERSONS_LAST_DOSE_PER100)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  labs(
+    title = "Distribution of Full Vaccination (% of Population)",
+    x = "Fully Vaccinated per 100",
+    y = "Number of Countries"
+  )
+```
+
+#interpretation:
+
+We can see that between the 65-75% of the population has received full vaccination in more than 15 different countries, the Gplot also shows that a lot of countries float around 40-50% full vaccination while some countries have over 90%. There's also 5-10 countries that have lowest vaccination percentile.
+
+
+#Booster Uptake per Region
+```{r}
+ggplot(vacc, aes(x = WHO_REGION, y = PERSONS_BOOSTER_ADD_DOSE_PER100)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(
+    title = "Booster Dose Uptake by WHO Region",
+    x = "Region",
+    y = "Booster Doses per 100"
+  )
+```
+
+
+#interpretation:
+
+According to the box-plot from the data provided, when it comes to regions, AFRO (Africa), has the lowest doses only around 9-10 per 100 people, while countries that have higher Booster Doses such as, Europe (EURO), Western Pacific (WRPO), and South East Asia (SEARO), have one of the highest medians when it comes to booster and doses per 100 people, Countries such as Eastern Mediterranean (EMRO) float just under 20 doses and America (AMRO), also floats around 20-25. Africa lags farthest in booster coverage, Europe, Western Pacific, the Americas, and Eastern Mediterranean show the greatest within-region disparities.
+
+
+#Booster Vs Full Vaccination
+```{r}
+ggplot(vacc, aes(x = PERSONS_LAST_DOSE_PER100, y = PERSONS_BOOSTER_ADD_DOSE_PER100)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Relationship between Full Vaccination and Booster Uptake",
+    x = "Fully Vaccinated per 100",
+    y = "Booster Doses per 100"
+  )
+```
+#interpretation
+
+We can see as a country’s full-vaccination rate goes up, its booster uptake tends to go up too—points slope upward from left to right. Most countries with <30 % fully vaccinated also have very low booster rates, while those >80 % fully vaccinated often reach 50–70 boosters per 100
+ 
+ 
+#Summary Statistics by Region
+```{r}
+summary_stats <- vacc %>%
+  group_by(WHO_REGION) %>%
+  summarise(
+    mean_full = mean(PERSONS_LAST_DOSE_PER100, na.rm = TRUE),
+    sd_full   = sd(PERSONS_LAST_DOSE_PER100, na.rm = TRUE),
+    min_full  = min(PERSONS_LAST_DOSE_PER100, na.rm = TRUE),
+    max_full  = max(PERSONS_LAST_DOSE_PER100, na.rm = TRUE)
+  )
+summary_stats
+```
+
+#Interpretation
+
+We can see that Africa (AFRO) Lags behind on vaccination making it the lowest in all regions sitting at a mean of only 37 per 100, Africa’s fully vaccinated proportion is well below the global average (~62 per 100).
+
+
+#Full Vaccination Coverage per Region
+
+```{r}
+anova_res <- aov(PERSONS_LAST_DOSE_PER100 ~ WHO_REGION, data = vacc)
+summary(anova_res)
+```
+#Interpretation
+
+According to Anova the rates between the mean full-vaccination rates across different regions yielded F(5, 199) = 17.09, p < 0.0001, showing that there's a high differences between regions in their average coverage. 
+
+
+#Correlation & Linear Regression: Boosters ~ Full Coverage 
+```{r}
+cor_res <- cor.test(
+  vacc$PERSONS_BOOSTER_ADD_DOSE_PER100,
+  vacc$PERSONS_LAST_DOSE_PER100,
+  use = "complete.obs"
+)
+cor_res
+
+lm_res <- lm(
+  PERSONS_BOOSTER_ADD_DOSE_PER100 ~ PERSONS_LAST_DOSE_PER100,
+  data = vacc
+)
+summary(lm_res)
+
+```
+
+#Interpretation
+We can see that the full vaccination strongly predicts the higher booster update. The Correlation, there's a strong relationship between the full vaccination and the booster update, when countries have higher full vaccination, they tend to also have a high booster rates. 
+
+
+#render HTML
+quarto::quarto_render("Final_Project.qmd")
+
+
+
+
+#Conclusion:
+
+Around 70 percent of people in high-income nations are fully vaccinated, compared to about 25% in low-income countries, according to my data of Global vaccination data. It's shows that vaccination access is still much higher in wealthy countries after  While several low-income countries stay below 30% coverage, most of high-income countries float above 65%.  This shows that countries with low-income don't have access to vaccinations or tend to not get vaccinated.
+
+I also analyzed the relationship between booster uptake and full vaccination rates. I performed a correlation test that provided me with (r = 0.85). The results show that for every point increase in full-series coverage, there will be about 0.9 more boosters per 100 people. Around 71 percent of the differences in booster rates between nations can be explained by data that I generated using the DATA . Increasing primary-series coverage leads to a higher booster distribution.
